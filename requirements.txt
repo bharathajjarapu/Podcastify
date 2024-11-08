@@ -5,4 +5,5 @@ soundfile
 streamlit 
 transformers 
 numpy
-tqdm
+python-dotenv
+torch
