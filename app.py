@@ -7,6 +7,7 @@ import soundfile as sf
 import ast
 from pydub import AudioSegment
 import io
+import os
 from dotenv import load_dotenv
 
 # Initialize Groq client
