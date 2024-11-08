@@ -5,3 +5,4 @@ soundfile
 streamlit 
 transformers 
 numpy
+tqdm
