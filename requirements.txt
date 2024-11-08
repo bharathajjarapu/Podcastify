@@ -1,0 +1,7 @@
+groq 
+git+https://github.com/huggingface/parler-tts.git
+pydub 
+soundfile
+streamlit 
+transformers 
+numpy
