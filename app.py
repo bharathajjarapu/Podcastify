@@ -3,9 +3,8 @@ import torch
 from groq import Groq
 from parler_tts import ParlerTTSForConditionalGeneration
 from transformers import AutoTokenizer
-import soundfile as sf
-import ast
-from pydub import AudioSegment
+import numpy as np
+from scipy.io import wavfile
 import io
 import os
 from dotenv import load_dotenv
@@ -45,13 +44,13 @@ def generate_audio(text, description):
     audio_arr = generation.cpu().numpy().squeeze()
     return audio_arr, model.config.sampling_rate
 
-def numpy_to_audio_segment(audio_arr, sampling_rate):
-    """Convert numpy array to AudioSegment."""
+def numpy_to_audio_buffer(audio_arr, sampling_rate):
+    """Convert numpy array to a byte buffer compatible with Streamlit."""
     audio_int16 = (audio_arr * 32767).astype("int16")
     byte_io = io.BytesIO()
-    sf.write(byte_io, audio_int16, sampling_rate, format="wav")
+    wavfile.write(byte_io, sampling_rate, audio_int16)
     byte_io.seek(0)
-    return AudioSegment.from_wav(byte_io)
+    return byte_io
 
 # Streamlit interface
 st.title("Podcast Generator using Groq and Parler-TTS")
@@ -76,22 +75,16 @@ if st.button("Generate Podcast"):
     ]
 
     # Generate and concatenate audio for each segment
-    final_audio = None
+    final_audio_buffer = io.BytesIO()
     for speaker, text in podcast_segments:
         description = speaker1_description if speaker == "Speaker 1" else speaker2_description
         audio_arr, rate = generate_audio(text, description)
-        audio_segment = numpy_to_audio_segment(audio_arr, rate)
+        audio_segment = numpy_to_audio_buffer(audio_arr, rate)
         
-        if final_audio is None:
-            final_audio = audio_segment
-        else:
-            final_audio += audio_segment
+        final_audio_buffer.write(audio_segment.read())
 
-    # Save the final podcast audio
-    final_audio_buffer = io.BytesIO()
-    final_audio.export(final_audio_buffer, format="mp3")
     final_audio_buffer.seek(0)
 
     # Streamlit audio player for final podcast
-    st.audio(final_audio_buffer, format="audio/mp3", start_time=0)
-    st.download_button(label="Download Podcast", data=final_audio_buffer, file_name="podcast.mp3", mime="audio/mp3")
+    st.audio(final_audio_buffer, format="audio/wav", start_time=0)
+    st.download_button(label="Download Podcast", data=final_audio_buffer, file_name="podcast.wav", mime="audio/wav")
